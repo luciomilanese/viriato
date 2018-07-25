@@ -150,7 +150,7 @@ MODULE constants
   !***********Linear_Test
   logical::linear
   !***********Shape_ETG
-  logical::etgshape_on
+  character(len=4)::etgshape_type = "none"
   !************DEFINITIONS -- DO NOT CHANGE!!!!!!!!!!!!!!!!*******************************
 
   integer :: nkx, nky, nkz
@@ -270,7 +270,7 @@ contains
 
     namelist /lineartest/ linear 
 
-    namelist /etgshape/ etgshape_on, kc0
+    namelist /etgshape/ etgshape_type, kc0
     
     open(unit=10, file=trim(ipfile), status='old')
     read (10, nml=box_parameters,iostat=ierr)
@@ -350,7 +350,7 @@ contains
     read(10, nml=etgshape, iostat=ierr)
     if(ierr /= 0) then                                                                                                       
        write(*,*) "Reading etgshape failed"
-       write(*,*) "etgshape_on, kc0=", kc0, etgshape_on
+       write(*,*) "etgshape_type, kc0=", kc0, etgshape_type
     end if
     close(10)
     

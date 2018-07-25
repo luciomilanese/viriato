@@ -3,7 +3,7 @@ program REGK
 !VIRIATO, 3D VERSION
 !Original serial code by Nuno Loureiro.
 !Parallelization by Bill Dorland and N. Loureiro.
-!
+! this is a test for github
 !Reduced GK (KREHM model) + slow mode eqs (see tome) + RMHD eqs
 !
 !

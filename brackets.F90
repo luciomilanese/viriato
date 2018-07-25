@@ -34,7 +34,7 @@ contains
     !braxyk, the value of the bracket also in k-space.
 
     use mp, only: proc0, iproc
-    use constants, only: nkx_par, nky, nlx, nly_par, nlz_par, npe, kc0, linear, etgshape_on
+    use constants, only: nkx_par, nky, nlx, nly_par, nlz_par, npe, kc0, linear, etgshape_type
     use transforms, only: FFT2d_direct
 
     implicit none
@@ -83,7 +83,7 @@ contains
     !braxyk, the value of the bracket also in k-space.
 
     use mp, only: proc0, iproc
-    use constants, only: nkx_par, nky, nlx, nly_par, nlz_par, npe, gmin, ngtot, kc0, linear, etgshape_on
+    use constants, only: nkx_par, nky, nlx, nly_par, nlz_par, npe, gmin, ngtot, kc0, linear, etgshape_type
     use transforms, only: FFT2d_direct
     implicit none
 
@@ -176,7 +176,7 @@ contains
     call bracket(dxapar,dyapar,tempx,tempy,braakparphik)
     call bracket(dxuepar,dyuepar,dxphi,dyphi,brauekparphik)
 
-    if(etgshape_on) then
+    if(etgshape_type=='kper') then
 	    do k=1,nlz_par
 	       do i=1,nkx_par
 	          do j=1,nky
@@ -186,13 +186,23 @@ contains
 	          end do
 	       end do
 	    end do
-	    else 
+	    else if(etgshape_type=='none') then
 	    do k=1,nlz_par
 	       do i=1,nkx_par
 	          do j=1,nky
 	             fapar(j,i,k)=1.0/(1.0+kperp(j,i)**2*de**2)*&
 	                  (braakparphik(j,i,k)-de**2*brauekparphik(j,i,k)&
 	                  -notanj*1.0/sqrt(2.0)*rhos_de*rhoe_LTe*(0.0,1.0)*ky(j)*Akpar(j,i,k))
+	          end do
+	       end do
+	    end do
+	    else if(etgshape_type=='kxon') then
+	    do k=1,nlz_par
+	       do i=1,nkx_par
+	          do j=1,nky
+	             fapar(j,i,k)=1.0/(1.0+kperp(j,i)**2*de**2)*&
+	                  (braakparphik(j,i,k)-de**2*brauekparphik(j,i,k)&
+	                  -notanj*1.0/sqrt(2.0)*rhos_de*rhoe_LTe*exp(-(kx(i)/kc0)**2)*(0.0,1.0)*ky(j)*Akpar(j,i,k))
 	          end do
 	       end do
 	    end do
@@ -229,7 +239,7 @@ contains
 
     call bracket(Dxg2,   Dyg2,   Dxphi, Dyphi, brag2phik)
     call bracket(Dxapar, Dyapar, Dxg3,  Dyg3,  braakparg3)
-if(etgshape_on) then
+if(etgshape_type=='kper') then
 	    do k = 1, nlz_par
 	       do i = 1, nkx_par
 	          do j = 1, nky
@@ -239,7 +249,7 @@ if(etgshape_on) then
 	              end do
 	       end do
 	    end do         
-	else 
+	else if(etgshape_type=='none') then
 	    do k = 1, nlz_par
 	       do i = 1, nkx_par
 	          do j = 1, nky
@@ -251,6 +261,16 @@ if(etgshape_on) then
 	          end do
 	       end do
 	    end do
+        else if(etgshape_type=='kxon') then
+        do k = 1, nlz_par
+	    do i = 1, nkx_par
+	       do j = 1, nky
+	           fg2(j,i,k) = brag2phik(j,i,k) + sqrt(gmin+1.0) * rhos_de * braakparg3(j,i,k) &
+	             + notanj * sqrt(2.0) * braakparuekpar(j,i,k) &
+	             - notanj * 1.0/(2.0*rhos*de) *rhoe_LTe*exp(-(kx(i)/kc0)**2)*(0.0,1.0) * ky(j) * Phik(j,i,k)
+	              end do
+	       end do
+	end do  
 end if 
 
   end subroutine Funcg2
@@ -262,7 +282,7 @@ end if
 
     use constants, only: gmin, ngtot, npe, nlx, nly, nly_par, nlz_par, nky, nkx_par, &
          &               kpar0, j1, omega0, facpm, amplitude, Lz, pi, lambda, de, &
-         &               notanj, rhos_de, rhoe_lte, kc0, etgshape_on 
+         &               notanj, rhos_de, rhoe_lte, kc0, etgshape_type 
     use grid, only: ky, zz, kx
     use mp, only: iproc, proc0
     use Functions, only: anj_kron
@@ -295,7 +315,7 @@ end if
          sqrt((m+1)*1.0)*Dxgp + sqrt(m*1.0)*(1.-1./lambda*anj_kron(m)*(1.-notanj))*Dxgm, &
          sqrt((m+1)*1.0)*Dygp + sqrt(m*1.0)*(1.-1./lambda*anj_kron(m)*(1.-notanj))*Dygm, &
   	   braakpargpm)
-if(etgshape_on) then
+	if(etgshape_type=='kper') then 
 	    do k = 1, nlz_par
 	       do i = 1, nkx_par
 	          do j = 1, nky
@@ -306,7 +326,7 @@ if(etgshape_on) then
 	          end do
 	       end do
 	    end do
-	else
+	else if(etgshape_type=='none') then
 	    do k = 1, nlz_par
 	       do i = 1, nkx_par
 	          do j = 1, nky 
@@ -320,6 +340,19 @@ if(etgshape_on) then
 	          end do
 	       end do
 	    end do
+	else if(etgshape_type=='kxon') then
+	 do k = 1, nlz_par
+	       do i = 1, nkx_par
+	          do j = 1, nky
+	             fgm(j, i, k) = &
+	                  -braphikg(j, i, k) + rhos_de * braakpargpm(j, i, k) &
+	                  + notanj * lte_kron(m) * sqrt(3.0)/(2.0*de**2) &
+	                  * rhoe_LTe*exp(-(kx(i)/kc0)**2)*ky(j)*Akpar(j, i, k)
+	          end do
+	       end do
+	    end do
+	else 
+	write(*,*) 'wrong etgshape_type specification'
 end if
     !AVK: 20/03/2013: dbpar antenna
     !AVK: Needs (b dot grad) operating on the antenna
@@ -340,7 +373,7 @@ end if
 
     use constants, only: gmin, ngtot, npe, nlx, nly, nly_par, nlz_par, nky, nkx_par, &
          &               kpar0, j1, omega0, facpm, amplitude, Lz, pi, lambda, de, &
-         &               notanj, rhos_de, rhoe_lte, kc0, etgshape_on
+         &               notanj, rhos_de, rhoe_lte, kc0, etgshape_type
     use grid, only: ky, zz, kx
     use mp, only: iproc, proc0
     use Functions, only: anj_kron
@@ -387,7 +420,7 @@ end if
          &       fDxg(:, :, :, :),  fDyg(:, :, :, :), braakpargpm(:, :, :, :))
 
 
-if(etgshape_on) then
+if(etgshape_type=='kper') then
 	    do m = gmin+1, ngtot-1
 	       do k = 1, nlz_par
 	          do i = 1, nkx_par
@@ -402,7 +435,7 @@ if(etgshape_on) then
 	          end do
 	       end do
 	    end do
-	else
+	else if(etgshape_type=='none') then
 	    do m = gmin+1, ngtot-1
 	       do k = 1, nlz_par
 	          do i = 1, nkx_par
@@ -417,6 +450,22 @@ if(etgshape_on) then
 	          end do
 	       end do
 	    end do
+	else if(etgshape_type=='kxon') then
+	 do m = gmin+1, ngtot-1
+	       do k = 1, nlz_par
+	          do i = 1, nkx_par
+	             do j = 1, nky
+	                fgm(j, i, k, m) = &
+	                     -braphikg(j, i, k, m) + rhos_de * braakpargpm(j, i, k, m) &
+	                     + notanj * lte_kron(m) * sqrt(3.0)/(2.0*de**2) &
+	                     * rhoe_LTe*exp(-(kx(i)/kc0)**2)*ky(j) * Akpar(j, i, k)
+	!                     +notanj*lte_kron(m)*sqrt(3.0/2.0)*rhos_de*rhoe_LTe*(0.0,1.0)*ky(j)*Akpar(j,i,k)
+	!NFL: 24/05/13 commented line above had wrong normalizations
+	             end do
+	          end do
+	       end do
+	    end do
+
 end if 
 
     !AVK: 20/03/2013: dbpar antenna
